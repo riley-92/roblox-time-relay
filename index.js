@@ -3,7 +3,7 @@ const app = express()
 app.use(express.json())
 const fs = require("fs")
 
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1498718530970062899/rtt3qUZSLFTgkjkHeTWkMcnVelWdsZYSAMPxNpt6PbCXm4wmk4Or8leAybRVK97QWqyQ"
+const WEBHOOK_URL = "TON_WEBHOOK_ICI"
 const ID_FILE = "./messageid.txt"
 
 let messageId = null
@@ -12,13 +12,17 @@ if (fs.existsSync(ID_FILE)) {
 }
 
 app.post("/time", async (req, res) => {
-    const { time, period } = req.body
+    const { time, period, players } = req.body
 
     const body = JSON.stringify({
         embeds: [{
             title: "🕐 Heure In-Game",
-            description: `Il est actuellement **${time}** ${period}`,
-            color: period === "☀️" ? 0xFFD54F : 0x3F51B5
+            description: players > 0
+                ? `Il est actuellement **${time}** ${period}`
+                : `⚫ Aucun serveur actif`,
+            color: players > 0
+                ? (period === "☀️" ? 0xFFD54F : 0x3F51B5)
+                : 0x000000
         }]
     })
 
@@ -33,7 +37,7 @@ app.post("/time", async (req, res) => {
             fs.writeFileSync(ID_FILE, "")
         }
     }
-    
+
     if (!messageId) {
         const response = await fetch(`${WEBHOOK_URL}?wait=true`, {
             method: "POST",
