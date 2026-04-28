@@ -3,7 +3,7 @@ const app = express()
 app.use(express.json())
 const fs = require("fs")
 
-const WEBHOOK_URL = "TON_WEBHOOK_ICI"
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1498718530970062899/rtt3qUZSLFTgkjkHeTWkMcnVelWdsZYSAMPxNpt6PbCXm4wmk4Or8leAybRVK97QWqyQ"
 const ID_FILE = "./messageid.txt"
 
 let messageId = null
@@ -40,7 +40,6 @@ async function sendToDiscord(body) {
     }
 }
 
-// Vérifie toutes les 30 secondes si Roblox envoie encore
 setInterval(async () => {
     const elapsed = Date.now() - lastReceived
     if (elapsed > 30000) {
@@ -61,8 +60,8 @@ app.post("/time", async (req, res) => {
     await sendToDiscord({
         embeds: [{
             title: "🕐 Heure In-Game",
-            description: `Il est actuellement **${time}** ${period}`,
-            color: period === "☀️" ? 0xFFD54F : 0x3F51B5
+            description: `Il est actuellement **${time}** ${period === "jour" ? "☀️" : "🌙"}`,
+            color: period === "jour" ? 0xFFD54F : 0x3F51B5
         }]
     })
 
