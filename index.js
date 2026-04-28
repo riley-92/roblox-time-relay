@@ -3,34 +3,24 @@ const app = express()
 app.use(express.json())
 const fs = require("fs")
 
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1498718530970062899/rtt3qUZSLFTgkjkHeTWkMcnVelWdsZYSAMPxNpt6PbCXm4wmk4Or8leAybRVK97QWqyQ"
+const WEBHOOK_URL = "TON_WEBHOOK_ICI"
 const ID_FILE = "./messageid.txt"
 
 let messageId = null
+let lastReceived = Date.now()
+
 if (fs.existsSync(ID_FILE)) {
     messageId = fs.readFileSync(ID_FILE, "utf8").trim()
 }
 
-app.post("/time", async (req, res) => {
-    const { time, period, players } = req.body
-
-    const body = JSON.stringify({
-        embeds: [{
-            title: "🕐 Heure In-Game",
-            description: players > 0
-                ? `Il est actuellement **${time}** ${period}`
-                : `⚫ Aucun serveur actif`,
-            color: players > 0
-                ? (period === "☀️" ? 0xFFD54F : 0x3F51B5)
-                : 0x000000
-        }]
-    })
+async function sendToDiscord(body) {
+    const bodyStr = JSON.stringify(body)
 
     if (messageId) {
         const patch = await fetch(`${WEBHOOK_URL}/messages/${messageId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: body
+            body: bodyStr
         })
         if (!patch.ok) {
             messageId = null
@@ -42,12 +32,39 @@ app.post("/time", async (req, res) => {
         const response = await fetch(`${WEBHOOK_URL}?wait=true`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: body
+            body: bodyStr
         })
         const data = await response.json()
         messageId = data.id
         fs.writeFileSync(ID_FILE, messageId)
     }
+}
+
+// Vérifie toutes les 30 secondes si Roblox envoie encore
+setInterval(async () => {
+    const elapsed = Date.now() - lastReceived
+    if (elapsed > 30000) {
+        await sendToDiscord({
+            embeds: [{
+                title: "🕐 Heure In-Game",
+                description: "⚫ Aucun serveur actif",
+                color: 0x333333
+            }]
+        })
+    }
+}, 30000)
+
+app.post("/time", async (req, res) => {
+    const { time, period } = req.body
+    lastReceived = Date.now()
+
+    await sendToDiscord({
+        embeds: [{
+            title: "🕐 Heure In-Game",
+            description: `Il est actuellement **${time}** ${period}`,
+            color: period === "☀️" ? 0xFFD54F : 0x3F51B5
+        }]
+    })
 
     res.sendStatus(200)
 })
