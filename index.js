@@ -2,9 +2,9 @@ const express = require("express")
 const app = express()
 app.use(express.json())
 
-const WEBHOOK_URL = "TON_WEBHOOK_ICI"
-const RENDER_API_KEY = "TON_RENDER_API_KEY"
-const RENDER_SERVICE_ID = "TON_SERVICE_ID"
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1498718530970062899/rtt3qUZSLFTgkjkHeTWkMcnVelWdsZYSAMPxNpt6PbCXm4wmk4Or8leAybRVK97QWqyQ"
+const RENDER_API_KEY = "rnd_ntJfmJ3XarkGjHpKNrp7iKi499E2"
+const RENDER_SERVICE_ID = "srv-d7oelmn7f7vs73armf5g"
 
 let messageId = process.env.MESSAGE_ID || null
 let lastReceived = Date.now()
