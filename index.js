@@ -2,15 +2,32 @@ const express = require("express")
 const app = express()
 app.use(express.json())
 
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1498718530970062899/rtt3qUZSLFTgkjkHeTWkMcnVelWdsZYSAMPxNpt6PbCXm4wmk4Or8leAybRVK97QWqyQ"
+const WEBHOOK_URL = "TON_WEBHOOK_ICI"
+const RENDER_API_KEY = "TON_RENDER_API_KEY"
+const RENDER_SERVICE_ID = "TON_SERVICE_ID"
 
-let messageId = null
+let messageId = process.env.MESSAGE_ID || null
 let lastReceived = Date.now()
+
+async function saveMessageId(id) {
+    messageId = id
+    try {
+        await fetch(`https://api.render.com/v1/services/${RENDER_SERVICE_ID}/env-vars`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${RENDER_API_KEY}`
+            },
+            body: JSON.stringify([{ key: "MESSAGE_ID", value: id }])
+        })
+    } catch(e) {
+        console.error("Erreur save messageId:", e)
+    }
+}
 
 async function sendToDiscord(body) {
     try {
         const bodyStr = JSON.stringify(body)
-
         if (messageId) {
             const patch = await fetch(`${WEBHOOK_URL}/messages/${messageId}`, {
                 method: "PATCH",
@@ -20,15 +37,13 @@ async function sendToDiscord(body) {
             if (patch.ok) return
             messageId = null
         }
-
         const response = await fetch(`${WEBHOOK_URL}?wait=true`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: bodyStr
         })
         const data = await response.json()
-        if (data.id) messageId = data.id
-
+        if (data.id) await saveMessageId(data.id)
     } catch (err) {
         console.error("Erreur Discord:", err)
     }
@@ -50,7 +65,6 @@ app.post("/time", async (req, res) => {
     try {
         const { time, period } = req.body
         lastReceived = Date.now()
-
         await sendToDiscord({
             embeds: [{
                 title: "🕐 Heure In-Game",
@@ -58,10 +72,9 @@ app.post("/time", async (req, res) => {
                 color: period === "jour" ? 0xFFD54F : 0x3F51B5
             }]
         })
-
         res.sendStatus(200)
     } catch (err) {
-        console.error("Erreur route /time:", err)
+        console.error("Erreur:", err)
         res.sendStatus(500)
     }
 })
